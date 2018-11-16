@@ -1,22 +1,35 @@
+-- Chapter 1 minfree
 import Data.List
+import Data.Array
+import Control.Monad.ST
+import Data.Array.ST
 
-msc :: Ord a => [a] -> Int
-msc xs = maximum [scount z zs | z:zs <- tails xs]
-scount x xs = length $ filter (x<) xs
+minfree xs = head $ [0..] \\ xs
+minfree' = search . checklist
 
-msc' :: Ord a => [a] -> Int
-msc' = maximum . map snd . table
-
-table :: (Ord a) => [a] -> [(a, Int)]
-table [x] = [(x, 0)]
-table xs = join (m - n) (table ys) (table zs)
+minfree'' xs = minfrom 0 (length xs, xs)
+minfrom a (n, xs)
+  | n == 0 = a
+  | m == b - a = minfrom b (n - m, vs)
+  | otherwise = minfrom a (m, us)
   where
-    m = length xs
-    n = m `div` 2
-    (ys, zs) = splitAt n xs
+    (us, vs) = partition (<b) xs
+    b = a + 1 + n `div` 2
+    m = length us
+                  
 
-join 0 txs [] = txs
-join n [] tys = tys
-join n txs@((x, c):txs') tys@((y, d):tys')
-  | x < y = (x, c + n):join n txs' tys
-  | otherwise = (y, d):join (n - 1) txs tys'
+search :: Array Int Bool -> Int
+search = length . takeWhile id . elems
+
+checklist xs = runSTArray (do
+    a <- newArray (0, n) False
+    sequence [writeArray a x True | x <- xs, x <= n]
+    return a)
+  where n = length xs
+
+{-
+checklist :: [Int] -> Array Int Bool
+checklist xs = accumArray () False (0, n) (zip (filter (<= n) xs) (repeat True))
+  where
+    n = length xs
+-}
